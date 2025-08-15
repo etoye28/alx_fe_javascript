@@ -149,3 +149,73 @@ loadQuotes();
 createAddQuoteForm();
 populateCategories();
 showRandomQuote();
+
+//something new is coming
+
+// ====== Step 1: Simulated server ======
+// We'll use JSONPlaceholder's posts API as "quotes"
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
+
+// ====== Step 2: Sync function ======
+async function syncQuotes() {
+  try {
+    // Fetch from server
+    const response = await fetch(SERVER_URL);
+    const serverQuotes = await response.json();
+
+    // Get local quotes
+    const localQuotes = JSON.parse(localStorage.getItem("quotes")) || [];
+
+    // Conflict resolution: server wins
+    // Overwrite local with server data
+    localStorage.setItem("quotes", JSON.stringify(serverQuotes));
+
+    // Inform user
+    console.log("Quotes synced from server. Conflicts resolved: Server version kept.");
+    showNotification("Quotes updated from server.");
+  } catch (error) {
+    console.error("Error syncing quotes:", error);
+  }
+}
+
+// ====== Step 3: Push new quotes ======
+async function pushQuote(newQuote) {
+  try {
+    const response = await fetch(SERVER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newQuote),
+    });
+
+    const savedQuote = await response.json();
+    console.log("Quote saved on server:", savedQuote);
+
+    // Add locally too
+    const localQuotes = JSON.parse(localStorage.getItem("quotes")) || [];
+    localQuotes.push(savedQuote);
+    localStorage.setItem("quotes", JSON.stringify(localQuotes));
+
+    showNotification("New quote synced to server.");
+  } catch (error) {
+    console.error("Error pushing quote:", error);
+  }
+}
+
+// ====== Step 4: Notification helper ======
+function showNotification(message) {
+  const div = document.createElement("div");
+  div.textContent = message;
+  div.style.background = "#222";
+  div.style.color = "#fff";
+  div.style.padding = "10px";
+  div.style.position = "fixed";
+  div.style.bottom = "10px";
+  div.style.right = "10px";
+  div.style.borderRadius = "5px";
+  document.body.appendChild(div);
+
+  setTimeout(() => div.remove(), 3000);
+}
+
+// ====== Step 5: Auto-sync every 30s ======
+setInterval(syncQuotes, 30000);
