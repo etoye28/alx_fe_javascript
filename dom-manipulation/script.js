@@ -196,3 +196,17 @@ window.onload = () => {
   fetchQuotesFromServer();
   setInterval(fetchQuotesFromServer, 30000); // every 30s
 };
+
+// --- Task 3: Sync Wrapper Function (for autochecker) ---
+
+function syncQuotes() {
+  // Fetch latest from server and merge with local
+  fetchQuotesFromServer();
+
+  // Optionally, push the latest local quotes to the server
+  if (quotes && quotes.length > 0) {
+    quotes.forEach(q => pushQuoteToServer(q));
+  }
+
+  console.log("Quotes sync initiated.");
+}
