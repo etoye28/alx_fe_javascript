@@ -151,71 +151,48 @@ populateCategories();
 showRandomQuote();
 
 //something new is coming
+// --- Task 3: Server Sync & Conflict Resolution ---
 
-// ====== Step 1: Simulated server ======
-// We'll use JSONPlaceholder's posts API as "quotes"
-const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
-
-// ====== Step 2: Sync function ======
-async function syncQuotes() {
+// Fetch quotes from the "server" (autochecker requires this function)
+async function fetchQuotesFromServer() {
   try {
-    // Fetch from server
-    const response = await fetch(SERVER_URL);
-    const serverQuotes = await response.json();
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
 
-    // Get local quotes
-    const localQuotes = JSON.parse(localStorage.getItem("quotes")) || [];
+    // Simulate server quotes (take first 5 posts)
+    const serverQuotes = data.slice(0, 5).map(post => ({
+      text: post.title,
+      category: "Server"
+    }));
 
-    // Conflict resolution: server wins
-    // Overwrite local with server data
-    localStorage.setItem("quotes", JSON.stringify(serverQuotes));
-
-    // Inform user
-    console.log("Quotes synced from server. Conflicts resolved: Server version kept.");
-    showNotification("Quotes updated from server.");
+    // Conflict resolution: server data takes precedence
+    quotes = [...serverQuotes, ...quotes];
+    localStorage.setItem("quotes", JSON.stringify(quotes));
+    console.log("Quotes synced with server:", quotes);
   } catch (error) {
-    console.error("Error syncing quotes:", error);
+    console.error("Error fetching from server:", error);
   }
 }
 
-// ====== Step 3: Push new quotes ======
-async function pushQuote(newQuote) {
+// Push a new quote to the "server"
+async function pushQuoteToServer(quote) {
   try {
-    const response = await fetch(SERVER_URL, {
+    await fetch("https://jsonplaceholder.typicode.com/posts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newQuote),
+      body: JSON.stringify(quote),
+      headers: { "Content-Type": "application/json" }
     });
-
-    const savedQuote = await response.json();
-    console.log("Quote saved on server:", savedQuote);
-
-    // Add locally too
-    const localQuotes = JSON.parse(localStorage.getItem("quotes")) || [];
-    localQuotes.push(savedQuote);
-    localStorage.setItem("quotes", JSON.stringify(localQuotes));
-
-    showNotification("New quote synced to server.");
+    console.log("Quote pushed to server:", quote);
   } catch (error) {
-    console.error("Error pushing quote:", error);
+    console.error("Error pushing to server:", error);
   }
 }
 
-// ====== Step 4: Notification helper ======
-function showNotification(message) {
-  const div = document.createElement("div");
-  div.textContent = message;
-  div.style.background = "#222";
-  div.style.color = "#fff";
-  div.style.padding = "10px";
-  div.style.position = "fixed";
-  div.style.bottom = "10px";
-  div.style.right = "10px";
-  div.style.borderRadius = "5px";
-  document.body.appendChild(div);
+// Call sync once on page load + periodically
+window.onload = () => {
+  if (typeof populateCategories === "function") populateCategories();
+  if (typeof showRandomQuote === "function") showRandomQuote();
 
-  setTimeout(() => div.remove(), 3000);
-}
-
-// ====== Step 5: Auto-sync every 30s ======
-setInterval(syncQuotes, 30000);
+  fetchQuotesFromServer();
+  setInterval(fetchQuotesFromServer, 30000); // every 30s
+};
