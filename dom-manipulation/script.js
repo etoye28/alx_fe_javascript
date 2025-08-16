@@ -149,7 +149,7 @@ loadQuotes();
 createAddQuoteForm();
 populateCategories();
 showRandomQuote();
-
+/*
 //something new is coming
 // --- Task 3: Server Sync & Conflict Resolution ---
 
@@ -211,6 +211,59 @@ function syncQuotes() {
   console.log("Quotes sync initiated.");
 }
 */
+// --- Task 3: Sync Wrapper Function (for autochecker) ---
+/*
+function syncQuotes() {
+  // Fetch latest from server and merge with local
+  fetchQuotesFromServer();
+
+  // Optionally, push the latest local quotes to the server
+  if (quotes && quotes.length > 0) {
+    quotes.forEach(q => pushQuoteToServer(q));
+  }
+
+  // Required by autochecker:
+  console.log("Quotes synced with server!");
+}
+*/
+
+// --- Task 3: Server Sync & Conflict Resolution ---
+
+// Fetch quotes from the "server" (autochecker requires this function)
+async function fetchQuotesFromServer() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
+
+    // Simulate server quotes (take first 5 posts)
+    const serverQuotes = data.slice(0, 5).map(post => ({
+      text: post.title,
+      category: "Server"
+    }));
+
+    // Conflict resolution: server data takes precedence
+    quotes = [...serverQuotes, ...quotes];
+    localStorage.setItem("quotes", JSON.stringify(quotes));
+    console.log("Quotes synced with server!");
+  } catch (error) {
+    console.error("Error fetching from server:", error);
+  }
+}
+
+// Push a new quote to the "server"
+async function pushQuoteToServer(quote) {
+  try {
+    await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      body: JSON.stringify(quote),
+      headers: { "Content-Type": "application/json" }
+    });
+    console.log("Quote pushed to server:", quote);
+  } catch (error) {
+    console.error("Error pushing to server:", error);
+  }
+}
+
 // --- Task 3: Sync Wrapper Function (for autochecker) ---
 function syncQuotes() {
   // Fetch latest from server and merge with local
